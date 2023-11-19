@@ -2,12 +2,16 @@ cmake_minimum_required(VERSION 3.13)
 
 option(ADD_HPGL "Add HPGL plugin" OFF)
  # Note: WiFi and Ethernet cannot be enabled at the same time!
-option(ADD_WIFI "Add WiFi networking" OFF)
+#option(ADD_WIFI "Add WiFi networking" OFF)
+option(ADD_WIFI "Add WiFi networking" ON)
 option(ADD_ETHERNET "Add Ethernet networking" OFF)
 option(ADD_BLUETOOTH "Add Bluetooth" OFF)
+#option(ADD_BLUETOOTH "Add Bluetooth" ON)
 # Set LWIP_DIR below to the root path of lwIP sources when the following is set ON!
-option(ADD_mDNS "Add mDNS service" OFF) 
-option(ADD_MQTT "Add MQTT client API" OFF)
+#option(ADD_mDNS "Add mDNS service" OFF) 
+option(ADD_mDNS "Add mDNS service" ON) 
+#option(ADD_MQTT "Add MQTT client API" OFF)
+option(ADD_MQTT "Add MQTT client API" ON)
 #
 option(AddMyPlugin "Add my_plugin.c to build" OFF)
 
@@ -29,7 +33,7 @@ endif()
 include(grbl/CMakeLists.txt)
 include(fatfs/CMakeLists.txt)
 include(motors/CMakeLists.txt)
-include(trinamic/CMakeLists.txt)
+#include(trinamic/CMakeLists.txt)
 include(spindle/CMakeLists.txt)
 include(sdcard/CMakeLists.txt)
 include(keypad/CMakeLists.txt)
@@ -59,7 +63,7 @@ if(AddMyPlugin)
     btt_skr_pico_10.c
     ioports.c
     ioports_analog.c
-    tmc_uart.c
+    # tmc_uart.c
     MCP3221.c
     my_plugin.c
     littlefs/lfs.c
@@ -81,7 +85,7 @@ else()
     btt_skr_pico_10.c
     ioports.c
     ioports_analog.c
-    tmc_uart.c
+    # tmc_uart.c
     MCP3221.c
     littlefs/lfs.c
     littlefs/lfs_util.c
@@ -186,7 +190,7 @@ target_link_libraries(grblHAL PRIVATE
  fatfs
  sdcard
  motors
- trinamic
+#  trinamic
  spindle
  keypad
  fans
