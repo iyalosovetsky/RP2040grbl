@@ -51,10 +51,14 @@
 //#define WEBUI_AUTH_ENABLE    1 // Enable ESP3D-WEBUI authentication.
 //#define WEBUI_INFLASH        1 // Store WebUI files in flash instead of on SD card.
 //#define SDCARD_ENABLE        2 // Run gcode programs from SD card. Set to 2 to enable YModem upload.
-//#define MPG_ENABLE           1 // Enable MPG interface. Requires serial port and one handshake pin unless
+#define MPG_ENABLE           1 // Enable MPG interface. Requires serial port and one handshake pin unless
                                  // KEYPAD_ENABLE is set to 2 when mode switching is done by the CMD_MPG_MODE_TOGGLE (0x8B)
                                  // command character. Set both MPG_ENABLE and KEYPAD_ENABLE to 2 to use a handshake pin anyway.
-//#define KEYPAD_ENABLE        1 // Set to 1 for I2C keypad, 2 for other input such as serial data. If KEYPAD_ENABLE is set to 2 
+//ig added for MPG
+#define SERIAL1_PORT 1 
+#define MPG_MODE 2
+
+#define KEYPAD_ENABLE        2 // Set to 1 for I2C keypad, 2 for other input such as serial data. If KEYPAD_ENABLE is set to 2 
                                  // and MPG_ENABLE is uncommented then the serial stream is shared with the MPG.
 //#define DISPLAY_ENABLE       1 // Set to 1 for I2C display protocol, 2 for I2C LED protocol.
 //#define ODOMETER_ENABLE      1 // Odometer plugin.
@@ -62,11 +66,6 @@
 //#define LASER_COOLANT_ENABLE 1 // Laser coolant plugin. To be completed.
 //#define FANS_ENABLE          1 // Enable fan control via M106/M107. Activates fan plugin.
 //#define EMBROIDERY_ENABLE    1 // Embroidery plugin. To be completed.
-//#define TRINAMIC_ENABLE      1 // Trinamic TMC2130 stepper driver support. NOTE: work in progress.
-//#define TRINAMIC_I2C         1 // Trinamic I2C - SPI bridge interface.
-//#define TRINAMIC_DEV         1 // Development mode, adds a few M-codes to aid debugging. Do not enable in production code.
-//#define EEPROM_ENABLE       16 // I2C EEPROM/FRAM support. Set to 16 for 2K, 32 for 4K, 64 for 8K, 128 for 16K and 256 for 16K capacity.
-//#define EEPROM_IS_FRAM       1 // Uncomment when EEPROM is enabled and chip is FRAM, this to remove write delay.
 
 // If the selected board map supports more than three motors ganging and/or auto-squaring
 // of axes can be enabled here.
@@ -128,8 +127,11 @@
 #else
 #define WIFI_SOFTAP 0
 #define WIFI_MODE WiFiMode_STA; // Do not change!
-#define WIFI_STA_SSID "IGORNET"
-#define WIFI_STA_PASSWORD "IG0RNET29041971" // Minimum 8 characters, or blank for open
+//#define WIFI_STA_SSID "IGORNET"
+//#define WIFI_STA_PASSWORD "IG0RNET29041971" // Minimum 8 characters, or blank for open
+//#define MQTT_IP_ADDRESS "10.80.39.78"
+//#define MQTT_USERNAME "igor"
+//#define MQTT_PASSWORD "p29041971"
 #endif
 
 //#define NETWORK_FTP_PORT     21

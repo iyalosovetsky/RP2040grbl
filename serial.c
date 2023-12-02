@@ -53,8 +53,12 @@ static void uart_interrupt_handler (void);
 
 #ifdef SERIAL1_PORT
 
-#define UART_1_TX_PIN 8
-#define UART_1_RX_PIN 9
+//ig #define UART_1_TX_PIN 8
+//ig #define UART_1_RX_PIN 9
+#define UART_1_TX_PIN 4
+#define UART_1_RX_PIN 5
+
+
 
 #ifndef UART_1_PORT
 #define UART_1_PORT uart1
