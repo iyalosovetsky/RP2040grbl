@@ -11,6 +11,8 @@ import time
 #    byte2 is alt(0x04),ralt(0x40),ctrl(0x01),rctrl(0x10),shit(0x02),rctrl(0x20) , opt(0x08) , ropt(0x80) 
 #    byte3 keycode - 'g' button
 
+DEBUG = False
+
 uartKBD = UART(1, baudrate=9600, bits=8, parity=None, stop=1, tx=Pin(4), rx=Pin(5))
 uartMPG = UART(0, baudrate=115200, bits=8, parity=None, stop=1, tx=Pin(0), rx=Pin(1))
 txData = b'RS485 send test...\r\n'
@@ -179,71 +181,228 @@ def getKeyName(kbdData):
             l_char +=HID_KEYCODE_TO_ASCII[l_scan][0].decode() 
     return l_char, l_shift, l_ctrl, l_caps
 
+def flashKbdLeds(p_leds_mask: int , p_macro_n: int):
+    # kk=0x17     #7 - 3 leds       # 1 - macro1
+    #print ("flashKbdLeds:", p_leds_mask , p_macro_n)
+    kk=(p_macro_n&15)*16 | (p_leds_mask&15)
+    cmd[1]=kk
+    cmd[2]=255-kk
+    uartKBD.write(cmd)
+    # print("sended 0 ->"," ".join(hex(n) for n in cmd))
+
+
+LED_SCROLLLOCK =  0x04
+LED_CAPSLOCK = 0x02
+LED_NUMLOCK = 0x01
+LED_ALL = LED_SCROLLLOCK + LED_CAPSLOCK + LED_NUMLOCK
+
+BLINK_2 = 1
+BLINK_5 = 2
+BLINK_INFINITE = 3
+NOBLINK = 4
+
+g_state = 'idle'
+g_state_old = 'idle'
+
+
+g_mpg_state = False
+g_mpg_state_old = False
+g_feedrate = 1000.0
+g_step = 5.0
+g_step_z = 1.0
+C_STEP_MAX = 100
+C_STEP_MIN = 0.1
+
+C_STEP_Z_MAX = 20
+C_STEP_Z_MIN = 0.1
+
+C_FEED_MAX = 8000
+C_FEED_MIN = 200
+
+
+
+
+#jog $J=G91 X0 Y-5 F600
+#$J=G91 X1 F100000
+#MPG -> <Idle|MPos:30.000,0.000,0.000|Bf:35,1023|FS:0,0,0|Pn:HS|WCO:0.000,0.000,0.000|WCS:G54|A:|Sc:|MPG:1|H:0|T:0|TLR:0|Sl:0.0|FW:grblHAL>
+def parseState(grblState:str):
+    l_state:str = None
+    l_mpg_state:bool = None
+    if grblState is None:
+      return None, None
+    if grblState.startswith('error:'):
+      return 'error', None
+
+    if not (grblState.startswith('<') and grblState.endswith('>')):
+      return None, None
+            
+    for ii,token in enumerate(grblState.replace('<','').replace('>','').lower().split('|')):
+        if ii==0 :
+          l_state = token
+        else:
+            elem = token.split(':')
+            if len(elem)>1 and elem[0]=='mpg' and elem[1] is not None:
+                    l_mpg_state=(elem[1]=='1')
+    return (l_state, l_mpg_state)    
+
+def displayState(grblState:str):     
+    global g_state
+    global g_mpg_state
+    l_state, l_mpg_state =  parseState(grblState.strip())
+    print("MPG ->",grblState,' - >>',l_state, l_mpg_state,'now=>',g_state, g_mpg_state)
+    if l_mpg_state is not None and g_mpg_state!=l_mpg_state:
+        g_mpg_state=l_mpg_state
+        
+        flashKbdLeds(LED_SCROLLLOCK , BLINK_5 if g_mpg_state else BLINK_2) 
+    if l_state is not None:  
+        if  l_state!= g_state or l_state == 'run' or l_state == 'hold' or l_state == 'jog' or l_state == 'alarm':
+            if l_state == 'alarm':
+                flashKbdLeds(LED_ALL , BLINK_INFINITE) 
+            elif l_state == 'run':    
+                flashKbdLeds(LED_SCROLLLOCK , BLINK_5) 
+            elif l_state == 'jog':    
+                flashKbdLeds(LED_SCROLLLOCK , BLINK_5) 
+            elif l_state == 'hold':    
+                flashKbdLeds(LED_NUMLOCK , BLINK_INFINITE) 
+            elif l_state == 'error':    
+                flashKbdLeds(LED_CAPSLOCK , BLINK_5) 
+            elif l_state == 'idle' and g_state!=l_state:    
+                flashKbdLeds(LED_ALL , NOBLINK) 
+            g_state = l_state
+    #print("MPG[2] ->",'now=>',g_state, g_mpg_state)
+
+
+
+
+
+
+            
+
+    
+    
+
+def mpgCommand(command:str):
+    print("mpgCommand:",command)
+    uartMPG.write(command.encode())
+
+
+def grblJog(x:float=0.0, y: float=0.0, z:float=0.0):
+    f=g_feedrate
+    if x is not None and x!=0.0:
+       mpgCommand(f'$J=G91 G21 X{x} F{f} \r\n') 
+    elif y is not None and y!=0.0:
+       mpgCommand(f'$J=G91 G21 Y{y} F{f} \r\n')    
+    elif z is not None and z!=0.0:
+       mpgCommand(f'$J=G91 G21 Z{z} F{f} \r\n')    
+
+
+
+
+
+def sent2grbl(command:str):
+  global g_feedrate
+  global g_step
+  global g_step_z
+  print('sent2grbl:',command)
+  if command in ('~','!','?'):
+    flashKbdLeds(LED_ALL , BLINK_2) ##7 - 3 leds       # 1 - macro1
+    mpgCommand(command)
+  elif command=='left' or command=='rigth':
+      grblJog(y=g_step *(1.0 if command=='rigth' else -1.0))
+  elif command=='up' or command=='down':
+      grblJog(x=g_step *(1.0 if command=='up' else -1.0))
+  elif command=='pageUp' or command=='pageDown':
+      grblJog(z=g_step_z *(1.0 if command=='pageDown' else -1.0))
+  elif command=='f4' or command=='f5':
+      g_feedrate =  g_feedrate+100
+      if  g_feedrate>C_FEED_MAX:
+          g_feedrate=C_FEED_MAX
+      elif g_feedrate<C_FEED_MIN:
+          g_feedrate=C_FEED_MIN
+      print('g_feedrate now',g_feedrate)        
+  elif command=='f1' or command=='f2':
+      g_step =  g_step*(10 if command=='f2' else 0.1)
+      if  g_step>C_STEP_MAX:
+          g_step=C_STEP_MAX
+      elif g_step<C_STEP_MIN:
+          g_step=C_STEP_MIN
+      print('g_step now',g_step)    
+  elif command=='f3' or command=='f4':
+      g_step_z =  g_step_z*(10.0 if command=='f4' else 0.1)
+      if  g_step_z>C_STEP_Z_MAX:
+          g_step_z=C_STEP_Z_MAX
+      elif g_step_z<C_STEP_Z_MIN:
+          g_step_z=C_STEP_Z_MIN
+      print('g_step_z now',g_step_z)    
+  elif command in ('#'):  
+    flashKbdLeds(LED_SCROLLLOCK , BLINK_5) ##2 - leds ???       # 2 - macro1 10/2 blink
+    uartMPG.write(bytearray(b'\x8b\r\n'))
+  elif command in ('@'):  
+    flashKbdLeds(LED_SCROLLLOCK , BLINK_5) ##2 - leds ???       # 2 - macro1 10/2 blink
+    uartMPG.write(bytearray(b'\x85\r\n'))
+    uartMPG.write(bytearray(b'\x18\r\n')) # cancel ascii
+  elif command in ('$'):  
+    flashKbdLeds(LED_ALL , BLINK_2) ##7 - 3 leds       # 1 - macro1
+    uartMPG.write('$X'.encode()+b'\r\n')
+  else:
+    #flashKbdLeds(LED_ALL , BLINK_5) ##7 - 3 leds       # 1 - macro1 5/2 blinks  - macro2 10/2 blinks - macro3 infinite blinks - macro4 base 
+    uartMPG.write(command.encode()+b'\r\n')
+
+
+
 
 COMMAND=''
 MACROS={}
 
 cmd=bytearray(  [0x01,0x01,0xFE,0x02])
+start_time_q = time.time()
 while True:
     #try:
         time.sleep(0.05) #50ms
-        if time.time()-start_time>1200:
-            ii +=1
-            start_time = time.time()
-            kk=(0x27 if ii%2 else 0x00)
-            cmd[1]=kk
-            cmd[2]=255-kk
-            uartKBD.write(cmd)
-            print("sended ->"," ".join(hex(n) for n in cmd))
+        if time.time()-start_time_q>3:
+            uartMPG.write(('?' if g_state == 'jog' else '?').encode()  )
+            start_time_q = time.time()
+        # if time.time()-start_time>1200:
+        #     ii +=1
+        #     start_time = time.time()
+        #     kk=(0x27 if ii%2 else 0x00)
+        #     cmd[1]=kk
+        #     cmd[2]=255-kk
+        #     uartKBD.write(cmd)
+        #     print("sended ->"," ".join(hex(n) for n in cmd))
         while uartMPG.any() > 0:
             rxMPG = uartMPG.read()
-            #print("MPG ->",rxMPG.decode()," ".join(hex(n) for n in rxMPG))
-            print("MPG ->",rxMPG.decode())
+            displayState(rxMPG.decode())
+            
         while uartKBD.any() > 0:
             rxdata = uartKBD.read()
-            print("gets[string0 ->"," ".join(hex(n) for n in rxdata))
+            # print("gets[string0 ->"," ".join(hex(n) for n in rxdata))
             for i in range(0, len(rxdata), 8):
                 line1 = rxdata[i:i + 8] 
                 l_char, l_shift, l_ctrl, l_caps = getKeyName(line1)
-                print("gets[string0/1 char ->",l_char,"error ->",l_ctrl,l_caps," ".join(hex(n) for n in line1))
-                if l_char =='esc' or l_char =='$' or l_char =='~' or l_char =='#' or l_char =='?' or l_char =='!' or l_char =='enter' or (l_char.startswith('ctrl-f') and len(l_char)>6) or (l_char.startswith('alt-f') and len(l_char)>5):
-                    if l_char in ('~','!','?'):
-                        COMMAND=l_char+'\r\n'
-                        print('command/hold->',COMMAND)
-                        uartMPG.write(b''+COMMAND)
+                # print("gets[string0/1 char ->",l_char,"error ->",l_ctrl,l_caps," ".join(hex(n) for n in line1))
+                if l_char =='esc' or l_char =='@' or l_char =='$' or \
+                    l_char =='~' or l_char =='#' or l_char =='?' or l_char =='!' or \
+                    l_char =='left' or l_char =='rigth' or l_char =='pageUp' or l_char =='pageDown' or \
+                    l_char =='up' or l_char =='down' or \
+                    l_char =='f1' or l_char =='f2' or l_char =='f3' or l_char =='f4' or \
+                    l_char =='enter' or \
+                    (l_char.startswith('ctrl-f') and len(l_char)>6) or (l_char.startswith('alt-f') and len(l_char)>5):
+                    if l_char in ('~','!','?','#','$','@') or \
+                        l_char =='left' or l_char =='rigth' or l_char =='pageUp' or l_char =='pageDown' or \
+                        l_char =='up' or l_char =='down' or \
+                        l_char =='f1' or l_char =='f2' or l_char =='f3' or l_char =='f4':
+                        sent2grbl(l_char)
                         COMMAND=''
-
-                    elif l_char in ('$'):
-                        COMMAND =bytearray(b'$X\r\n')
-                        print('command/hold->',COMMAND)
-                        uartMPG.write(COMMAND)
-                        COMMAND=''
-
-
-                    elif l_char in ('#'):
-                        COMMAND=bytearray(b'\x8b\r\n')
-                        print('command/hold->',COMMAND)
-                        uartMPG.write(COMMAND)
-                        COMMAND=''
-
                     elif l_char in ('esc'):
                         COMMAND=''
-                        kk=0x17     #7 - 3 leds       # 1 - macro1
-                        cmd[1]=kk
-                        cmd[2]=255-kk
-                        uartKBD.write(cmd)
-                        print("sended 0 ->"," ".join(hex(n) for n in cmd))
+                        if g_state == 'run' or g_state == 'jog':
+                            sent2grbl('@')
+                        else:
+                            flashKbdLeds(7 , 1) ##7 - 3 leds       # 1 - macro1
                         
                     elif l_char in ('enter'):
-                        print('command->',COMMAND)
-                        kk=0x00
-                        cmd[1]=kk
-                        cmd[2]=255-kk
-
-                        uartKBD.write(cmd)
-                        print("sended to kbd ff ->"," ".join(hex(n) for n in cmd))
-                        uartMPG.write(COMMAND.encode()+b'\r\n')
-                        print("sended to MPG  ->",COMMAND.encode()+b'\r\n')
+                        sent2grbl(COMMAND)
                         COMMAND=''
                         
                     elif l_char in ('backspace'):
@@ -267,14 +426,14 @@ while True:
                     
                     
             
+            if DEBUG:
+                try:
+                    print("end of get ->",COMMAND, l_shift,hex(rxdata[1]),rxdata[2],rxdata[3],l_char)
+                except Exception as e1:
+                    print("rt error",e1)
                     
-            try:
-              print("end of get ->",COMMAND, l_shift,hex(rxdata[1]),rxdata[2],rxdata[3],l_char)
-            except Exception as e1:
-                print("rt error",e1)
-                
-            print()
-            #rxdata = uart1.read()
+                print()
+                #rxdata = uart1.read()
 
 #except Exception as e1:
     #    print("rt error",e1)

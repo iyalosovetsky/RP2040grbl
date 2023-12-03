@@ -56,8 +56,8 @@
 #define STEP_PINS_BASE        13        // N_AXIS number of consecutive pins are used by PIO 13,14,15
 
 // Define user-control controls (cycle start, reset, feed hold) input pins.  Only Estop is supported on the Mach3 BOB.
-#define CYCLE_START_PIN       16 //Resumes a job that is paused. Paired with "feed_hold_pin" it will allow a machine to be paused and resumed with physical buttons.
-#define FEED_HOLD_PIN         17 //Pauses a job that is running. Paired with "cycle_start_pin" it will allow a machine to be paused and resumed with physical buttons.
+//#define CYCLE_START_PIN       16 //Resumes a job that is paused. Paired with "feed_hold_pin" it will allow a machine to be paused and resumed with physical buttons.
+//#define FEED_HOLD_PIN         17 //Pauses a job that is running. Paired with "cycle_start_pin" it will allow a machine to be paused and resumed with physical buttons.
 
 //Details: Resumes a job that is paused. Paired with "feed_hold_pin" it will allow a machine to be paused and resumed with physical buttons.
 
