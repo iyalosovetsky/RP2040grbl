@@ -4,6 +4,8 @@
     "axes": 6,
     "usb_cdc": 1,
     "uart": 1,
+    "spindle_pwm": 1,
+    "spindle_dir": 1,
     "serial_ports": 2,
     "eeprom": 1,
     "ganged_axes": 1,
@@ -29,6 +31,8 @@
       { "id": "networking" },
       { "id": "keypad" },
       { "id": "macros" },
+      { "id": "laser_cluster" },
+      { "id": "laser_coolant" },
       { "id": "bluetooth" },
       { "id": "fans" },
       { "id": "embroidery" }
@@ -48,8 +52,9 @@
         "axes": 5,
         "digital_in": 4,
         "digital_out": 8,
-        "eeprom": 0,
-        "fram": 0,
+        "eeprom": 1,
+        "fram": 1,
+        "i2c": 1,
         "sdcard": 1,
         "wifi": 1,
         "wiznet": 1,
@@ -82,6 +87,34 @@
         "safety_door": 0,
         "sdcard": 0
       }
+    },
+    {
+      "name": "PicoBOB_DLX",
+      "symbol": "BOARD_PICOBOB_DLX",
+      "URL": "https://github.com/Expatria-Technologies/PicoBOB-DLX",
+      "MAP": "picobob_dlx_map.h",
+      "caps": {
+        "axes": 5,
+        "digital_in": 2,
+        "digital_out": 3,
+        "safety_door": 0,
+        "sdcard": 0,
+        "wiznet": 1
+      }
+    },
+    {
+      "name": "PicoBOB_DLX_G540",
+      "symbol": "BOARD_PICOBOB_DLX",
+      "URL": "https://github.com/Expatria-Technologies/PicoBOB-DLX",
+      "MAP": "picobob_dlx_g540_map.h",
+      "caps": {
+        "axes": 4,
+        "digital_in": 2,
+        "digital_out": 3,
+        "safety_door": 0,
+        "sdcard": 0,
+        "wiznet": 1
+      }
     },    
     {
       "name": "BTT SKR Pico 1.0",
@@ -96,6 +129,40 @@
         "wifi": 0,
         "trinamic": 2209,
         "trinamic_uart_addr": 1
+      }
+    },
+	{
+      "name": "Generic",
+      "symbol": "",
+      "MAP": "generic_map.h",
+      "caps": {
+        "axes": 3,
+        "digital_in": 1,
+        "digital_out": 3,
+        "eeprom": 0,
+        "fram": 0,
+        "sdcard": 0,
+        "wifi": 1,
+        "wiznet": 0,
+        "bluetooth": 1,
+        "hc05": 0
+      }
+    },
+    {
+      "name": "Generic 4 axis",
+      "symbol": "BOARD_GENERIC_4AXIS",
+      "MAP": "generic_map_4axis.h",
+      "caps": {
+        "axes": 4,
+        "digital_in": 0,
+        "digital_out": 0,
+        "eeprom": 0,
+        "fram": 0,
+        "sdcard": 0,
+        "wifi": 1,
+        "wiznet": 0,
+        "bluetooth": 1,
+        "hc05": 0
       }
     }
   ]
