@@ -36,7 +36,8 @@
 // 0 txd0 1 rxd0
 // 4 txd1 5 rxd1
 #define PROBE_PORT            GPIO_INPUT
-#define PROBE_PIN             2
+//#define PROBE_PIN             2
+
 
 
 // Define stepper driver enable/disable output pin.
@@ -66,6 +67,7 @@
 #define X_LIMIT_PIN           21
 #define Y_LIMIT_PIN           20
 #define Z_LIMIT_PIN           19
+#define PROBE_PIN             18
 // $5=7 $6=1 $14=70  - invert probe hold start  
 
 // Define probe switch input pin.

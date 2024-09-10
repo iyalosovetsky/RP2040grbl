@@ -34,14 +34,22 @@
 // Configuration
 // Uncomment to enable.
 
+#define IS_TEST_BOARD // igor`s test purpose. DISABLE for real CNC!!
+
 #ifndef USB_SERIAL_CDC
 #define USB_SERIAL_CDC       1 // Serial communication via native USB.
 #endif
 //#define SAFETY_DOOR_ENABLE   1 // Enable safety door input.
 //#define BLUETOOTH_ENABLE     2 // Set to 2 for HC-05 module, enable in CMakeLists.txt if for Pico W Bluetooth.
+#ifndef IS_TEST_BOARD
 #define VFD_ENABLE             1 // Set to 1 works or 2 for Huanyang VFD spindle. More here https://github.com/grblHAL/Plugins_spindle
 #define MODBUS_ENABLE          1 // Set to 1 for auto direction, 2 for direction signal on auxillary output pin.
 #define MODBUS_BAUDRATE 2 // 9600
+#else
+  #define SPINDLE_PWM_PORT            GPIO_OUTPUT
+  #define SPINDLE_PWM_PIN         22
+#endif
+
 #define WIFI_ENABLE            1 // Do NOT enable here, enable in CMakeLists.txt!
 #define WIFI_SOFTAP            1 // Use Soft AP mode for WiFi. NOTE: WIP - not yet complete!
 //#define ETHERNET_ENABLE      0 // Do NOT enable here, enable in CMakeLists.txt!
@@ -121,17 +129,12 @@
 #define NETWORK_AP_IP           "192.168.4.1"  // Do not change!
 #define NETWORK_AP_GATEWAY      "192.168.4.1"  // Do not change!
 #define NETWORK_AP_MASK         "255.255.255.0"
-#define WIFI_STA_SSID "IGORNET"
-#define WIFI_STA_PASSWORD "IG0RNET29041971" // Minimum 8 characters, or blank for open
+//#define WIFI_STA_SSID "IGORNET"
+//#define WIFI_STA_PASSWORD "IG0RNET29041971" // Minimum 8 characters, or blank for open
 
 #else
 #define WIFI_SOFTAP 0
 #define WIFI_MODE WiFiMode_STA; // Do not change!
-//#define WIFI_STA_SSID "IGORNET"
-//#define WIFI_STA_PASSWORD "IG0RNET29041971" // Minimum 8 characters, or blank for open
-//#define MQTT_IP_ADDRESS "10.80.39.78"
-//#define MQTT_USERNAME "igor"
-//#define MQTT_PASSWORD "p29041971"
 #endif
 
 //#define NETWORK_FTP_PORT     21
